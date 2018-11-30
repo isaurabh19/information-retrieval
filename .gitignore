@@ -1,5 +1,6 @@
 .DS_Store
 .vscode/*
+*.pyc
 data/cacm/*
 data/corpus/*
 __pycache__/*
