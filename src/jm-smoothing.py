@@ -20,6 +20,8 @@ class JelinekMercer(object):
             self.log.setLevel(logging.DEBUG)
 
     def read(self, file_name, corpus_file_name):
+        self.log.info("\nInverted Index: {}\nCorpus Stats: {}".format(file_name, corpus_file_name))
+        
         with open(os.path.join(utils.INDEX_DIR, file_name)) as fp:
             self.inverted_index = json.loads(fp.read())
 
@@ -33,12 +35,16 @@ class JelinekMercer(object):
         L = 0.35
 
         queries = map(self.refine_query, self.queries)
-        
+        id = 0
         for query in queries:
-            self._compute_scores(query, C, L)
+            self._compute_scores(id, query, C, L)
+            id += 1
 
-    def _compute_scores(self, query, C, L):
-        self.log.info("Computing score for::\n {}".format(query))
+        self.sort()
+
+
+    def _compute_scores(self, id, query, C, L):
+        self.log.info("{} Query: {}".format(id, query))
         terms = query.split()
         iidx = self.get_inverted_indices(terms)
         
@@ -58,7 +64,10 @@ class JelinekMercer(object):
                 except ValueError:
                     pass
                     # self.log.warning("Zero val for query term {}".format(term))
-            self.jm_scores[query].append((docid, query_doc_score))
+
+            qid = "Q{}".format(id)
+            self.jm_scores[qid].append((docid, query_doc_score))
+        
         self.log.info(max(self.jm_scores[query], key=lambda x: x[1]))
 
 
@@ -97,13 +106,10 @@ class JelinekMercer(object):
                 pass
                 # self.log.warning("Missing key in index: {}".format(word))
         return iidx
-        
-    def write(self, file_name, data):
-        self.log.info("Writing: {}".format(file_name))
-        file_path = os.path.join(utils.RESULTS_DIR, file_name)
-        with open(file_path, 'w') as fp:
-            fp.write(json.dumps(data, indent=1))
 
+    def sort(self):
+        for query, ls in self.jm_scores.items():
+            self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:100]
 
 def get_queries(queries_path):
     with open(queries_path, 'r') as fp:
@@ -112,7 +118,7 @@ def get_queries(queries_path):
 def main(args):
 
     queries = None
-    if args.isquerystemmed:
+    if args.isstemmed:
         queries = get_queries(utils.STEM_QUERIES)
     else:
         queries = get_queries(utils.PARSED_QUERIES)
@@ -123,15 +129,19 @@ def main(args):
     obj.read(args.invertedindex, args.corpusstats)
     obj.computer_scores()
 
-    file_name = "stem_{}_jm_score.txt".format(args.isquerystemmed)
-    obj.write(file_name, obj.jm_scores)
+    file_name = "stem_{}_stop_{}_jm_score.txt".format(args.isstemmed, args.isstopped)
+    file_path = os.path.join(utils.RESULT_DIR, file_name)
+    utils.write(obj.log, file_path, obj.jm_scores)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parser for JM Smoothing")
-    parser.add_argument("-stem", "--isquerystemmed", action="store_true")
+    
     parser.add_argument("-d", "--debug", action="store_true")
     parser.add_argument("-ifile", "--invertedindex", type=str)
     parser.add_argument("-cfile", "--corpusstats", type=str)
+    parser.add_argument("-stem", "--isstemmed", action="store_true")
+    parser.add_argument("-stop", "--isstopped", action="store_true")
+
     args = parser.parse_args()
     print(args)
     main(args)

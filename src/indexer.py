@@ -15,6 +15,8 @@ class Indexer(object):
 		self.corpus_stats = defaultdict(dict)
 		self.corpus = defaultdict(str)
 
+		self.stopped_words = None
+		self.isstopped = args.isstopped
 		if args.debug:
 			self.log.setLevel(logging.DEBUG)
 
@@ -22,7 +24,7 @@ class Indexer(object):
 		"""Read the corpus directory into memory
 		"""
 		files = os.listdir(self.corpus_name)
-		files = list(map(lambda x: os.path.join(utils.CORPUS_DIR, x), files))
+		files = list(map(lambda x: os.path.join(self.corpus_name, x), files))
 
 		for file in files:
 			with open(file, 'r') as fp:
@@ -34,6 +36,10 @@ class Indexer(object):
 		"""Wrapper to create inverted index
 		"""
 		self.log.info("Creating Inverted Index")
+
+		if self.isstopped:
+			self.read_stopped_words()
+
 		for docid, content in self.corpus.items():
 			self._index(docid, content)
 
@@ -52,6 +58,9 @@ class Indexer(object):
 		term_freq = list(map(lambda x: content.count(x), vocab))
 
 		for word, freq in zip(vocab, term_freq):
+			if self.isstopped:
+				if word in self.stopped_words:
+					continue
 			self.inverted_index[word].append((docid, freq))
 
 	def create_positional_index(self):
@@ -88,35 +97,39 @@ class Indexer(object):
 				"unique_words": len(set(content))
 			}
 
-	def write(self, file_name, data):
-		self.log.info("Writing: {}".format(file_name))
-		file_path = os.path.join(utils.INDEX_DIR, file_name)
-		with open(file_path, 'w') as fp:
-			fp.write(json.dumps(data, indent=1))
+	def read_stopped_words(self):
+		with open(os.path.join(utils.BASE_DIR, "data", "common_words"), "r") as fp:
+			self.stopped_words = set(fp.read().split("\n"))
+
 
 def main(args):
+	print(args)
 	obj = None
 
-	# if args.corpus != "":
-	# 	obj = Indexer(str(args.corpus), args)
-	# else:
-	obj = Indexer(utils.CORPUS_DIR, args)
+	if args.isstemmed:
+		obj = Indexer(utils.STEM_CORPUS_DIR, args)
+	else:
+		obj = Indexer(utils.CORPUS_DIR, args)
+	
 	obj.read()
 	
 	# create inverted indexes
 	obj.index()
-	file_name = "{}_inverted_index.txt".format(os.path.basename(obj.corpus_name).split(".")[0])
-	obj.write(file_name, obj.inverted_index)
+	file_name = "stem_{}_stop_{}_inverted_index.txt".format(args.isstemmed, args.isstopped)
+	file_path = os.path.join(utils.INDEX_DIR, file_name)
+	utils.write(obj.log, file_path, obj.inverted_index)
 	
 	# create positional indexes
-	file_name = "{}_positional_index.txt".format(os.path.basename(obj.corpus_name).split(".")[0])
 	obj.create_positional_index()
-	obj.write(file_name, obj.positional_index)
+	file_name = "stem_{}_stop_{}_positional_index.txt".format(args.isstemmed, args.isstopped)
+	file_path = os.path.join(utils.INDEX_DIR, file_name)
+	utils.write(obj.log, file_path, obj.positional_index)
 
 	# create corpus stats
-	file_name = "{}_corpus_stats.txt".format(os.path.basename(obj.corpus_name).split(".")[0])
 	obj.create_corpus_stats()
-	obj.write(file_name, obj.corpus_stats)
+	file_name = "stem_{}_stop_{}_corpus_stats.txt".format(args.isstemmed, args.isstopped)
+	file_path = os.path.join(utils.INDEX_DIR, file_name)
+	utils.write(obj.log, file_path, obj.corpus_stats)
 
 
 if __name__ == '__main__':
@@ -124,6 +137,6 @@ if __name__ == '__main__':
 		description="Parse arguments for Indexer")
 	
 	parser.add_argument('-d', '--debug', action="store_true")
-	parser.add_argument('-corpus', '--corpus-directory', default="", type=str)
-
+	parser.add_argument('-stem', '--isstemmed', action="store_true")
+	parser.add_argument('-stop', '--isstopped', action="store_true")
 	main(parser.parse_args())

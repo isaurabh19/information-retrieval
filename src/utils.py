@@ -1,12 +1,15 @@
 import os
 import sys
+import json
 import logging
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CACM_DIR = os.path.join(BASE_DIR, 'data', 'cacm')
-CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'corpus')
 INDEX_DIR = os.path.join(BASE_DIR, 'data', 'index')
-RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+RESULT_DIR = os.path.join(BASE_DIR, 'results')
+
+CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'corpus')
+STEM_CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'stem_corpus')
 
 GEN_QUERIES = os.path.join(BASE_DIR, "data", "cacm.query.txt")
 STEM_QUERIES = os.path.join(BASE_DIR, "data", "cacm_stem.query.txt")
@@ -33,3 +36,7 @@ def get_logger(logger_name):
 	logger.addHandler(console_handler)
 	return logger
 
+def write(logger, file_path, data):
+    logger.info("Writing: {}".format(file_path))
+    with open(file_path, 'w') as fp:
+        fp.write(json.dumps(data, indent=1))
