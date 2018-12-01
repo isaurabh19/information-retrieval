@@ -62,7 +62,7 @@ class Parser(object):
         """
         
         # keeping '
-        content = re.sub("[,\"^(){};/<>*!@#$%.+=|?~:]+", " ", content)
+        content = re.sub("[',\"^(){};/<>*!@#$%.+=|-?~:]+", " ", content)
         if args.casefolding:
             content = content.lower()
         return content
