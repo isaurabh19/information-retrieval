@@ -2,10 +2,16 @@ import os
 import sys
 import logging
 
-BASE_DIR = os.path.dirname(os.getcwd())
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CACM_DIR = os.path.join(BASE_DIR, 'data', 'cacm')
 CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'corpus')
 INDEX_DIR = os.path.join(BASE_DIR, 'data', 'index')
+RESULTS_DIR = os.path.join(BASE_DIR, 'results')
+
+GEN_QUERIES = os.path.join(BASE_DIR, "data", "cacm.query.txt")
+STEM_QUERIES = os.path.join(BASE_DIR, "data", "cacm_stem.query.txt")
+
+PARSED_QUERIES = os.path.join(BASE_DIR, "data", "cacm.parsed.query.txt")
 
 def check_dirs():
 	if not os.path.exists(CACM_DIR):

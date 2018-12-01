@@ -12,6 +12,7 @@ class Indexer(object):
 		self.log = utils.get_logger("IndexerLog")
 		self.inverted_index = defaultdict(list)
 		self.positional_index = defaultdict(dict)
+		self.corpus_stats = defaultdict(dict)
 		self.corpus = defaultdict(str)
 
 		if args.debug:
@@ -80,6 +81,13 @@ class Indexer(object):
 			if len(pos_index) > 0:
 				self.positional_index[w][docid] = pos_index
 
+	def create_corpus_stats(self):
+		for docid, content in self.corpus.items():
+			self.corpus_stats[docid] = {
+				"word_count": len(content),
+				"unique_words": len(set(content))
+			}
+
 	def write(self, file_name, data):
 		self.log.info("Writing: {}".format(file_name))
 		file_path = os.path.join(utils.INDEX_DIR, file_name)
@@ -104,6 +112,11 @@ def main(args):
 	file_name = "{}_positional_index.txt".format(os.path.basename(obj.corpus_name).split(".")[0])
 	obj.create_positional_index()
 	obj.write(file_name, obj.positional_index)
+
+	# create corpus stats
+	file_name = "{}_corpus_stats.txt".format(os.path.basename(obj.corpus_name).split(".")[0])
+	obj.create_corpus_stats()
+	obj.write(file_name, obj.corpus_stats)
 
 
 if __name__ == '__main__':

@@ -4,3 +4,4 @@
 data/cacm/*
 data/corpus/*
 __pycache__/*
+.ipynb*
