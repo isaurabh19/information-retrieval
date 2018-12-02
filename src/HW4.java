@@ -8,7 +8,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
+// import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -31,9 +31,9 @@ import org.apache.lucene.util.Version;
  * To create Apache Lucene index in a folder and add files into this index based
  * on the input of the user.
  */
-public class HW4 {
+public class lucene {
     private static Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
-    private static Analyzer sAnalyzer = new SimpleAnalyzer(Version.LUCENE_47);
+    // private static Analyzer sAnalyzer = new SimpleAnalyzer(Version.LUCENE_47);
 
     private IndexWriter writer;
     private ArrayList<File> queue = new ArrayList<File>();
@@ -46,10 +46,10 @@ public class HW4 {
 	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 	String s = br.readLine();
 
-	HW4 indexer = null;
+	lucene indexer = null;
 	try {
 	    indexLocation = s;
-	    indexer = new HW4(s);
+	    indexer = new lucene(s);
 	} catch (Exception ex) {
 	    System.out.println("Cannot create index..." + ex.getMessage());
 	    System.exit(-1);
@@ -90,20 +90,19 @@ public class HW4 {
 	IndexSearcher searcher = new IndexSearcher(reader);
 
 	s = "";
-	int count = 64;
+	int count = 0;
 	while (!s.equalsIgnoreCase("q")) {
 	    try {
-
-		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
 		System.out.println("Enter the search query (q=quit):");
 		s = br.readLine();
 		if (s.equalsIgnoreCase("q")) {
 		    break;
 		}
 
-	    String fileName = "Q-" + Integer.toString(count) + ".txt";
+	    String fileName = "Q" + Integer.toString(count) + ".txt";
 	    FileWriter fileWriter = new FileWriter(fileName);
     	PrintWriter printWriter = new PrintWriter(fileWriter);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
 
 		Query q = new QueryParser(Version.LUCENE_47, "contents", analyzer).parse(s);
 		searcher.search(q, collector);
@@ -143,7 +142,7 @@ public class HW4 {
      * @throws java.io.IOException
      *             when exception creating index.
      */
-    HW4(String indexDir) throws IOException {
+    lucene(String indexDir) throws IOException {
 
 	FSDirectory dir = FSDirectory.open(new File(indexDir));
 

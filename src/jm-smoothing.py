@@ -44,7 +44,7 @@ class JelinekMercer(object):
 
 
     def _compute_scores(self, id, query, C, L):
-        self.log.info("{} Query: {}".format(id, query))
+        self.log.info("Q{}: {}".format(id, query))
         terms = query.split()
         iidx = self.get_inverted_indices(terms)
         
@@ -68,7 +68,7 @@ class JelinekMercer(object):
             qid = "Q{}".format(id)
             self.jm_scores[qid].append((docid, query_doc_score))
         
-        self.log.info(max(self.jm_scores[query], key=lambda x: x[1]))
+        self.log.info(max(self.jm_scores[qid], key=lambda x: x[1]))
 
 
     def refine_query(self, query):
