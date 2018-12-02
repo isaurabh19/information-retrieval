@@ -1,11 +1,12 @@
+from nltk import sent_tokenize, word_tokenize
+from bs4 import BeautifulSoup as bs
 import os
 import re
 import utils
-import timeit
 import logging
 import argparse
-from bs4 import BeautifulSoup as bs
 
+PCH = r"""!#$%&()*+/:;<=>?@[\]^_'"`{|}~,.-'"""
 
 class Parser(object):
     """Parses html documents and generates a cleaned file after
@@ -15,7 +16,6 @@ class Parser(object):
     """
     def __init__(self, args):
         self.log = utils.get_logger("ParserLog")
-        self.log.info(args)
 
         if args.debug:
             self.log.setLevel(logging.DEBUG)
@@ -41,16 +41,18 @@ class Parser(object):
         corpus_file_path = os.path.join(utils.CORPUS_DIR, "{}.txt".format(file_name))
 
         if ext == "html":
-            self.log.debug(file_name)
-            
             with open(fpath, 'r') as fp:
                 soup = bs(fp.read(), "html.parser")
                 content = soup.find('pre').get_text()
+                if args.casefolding:
+                    content = content.lower()
+
                 content = self.clean(content)
 
                 # concat all terms with a single space character
-                content = " ".join(content.split())
+                content = " ".join(content)
 
+                self.log.debug(corpus_file_path)
                 with open(corpus_file_path, 'w') as fwp:
                     fwp.write(content)
 
@@ -60,27 +62,36 @@ class Parser(object):
         Arguments:
             content (String)
         """
+        tokens_list=[]
+
+        def remove_special_chars(token):
+            for p in PCH:
+                if token.startswith(p):
+                    return False
+            return not token in PCH
+
+        def remove_fullstop_end(token):
+            if token.endswith('.'):
+                return token[:-1]
+            return token
+
+        sentences = sent_tokenize(content)
         
-        # keeping '
-        content = re.sub("[',\"^(){};/<>*!@#$%.+=|-?~:]+", " ", content)
-        if args.casefolding:
-            content = content.lower()
-        return content
+        for sentence in sentences:
+            tokens = word_tokenize(sentence)
+            tokens = filter(remove_special_chars, tokens)
+            tokens = map(remove_fullstop_end, tokens)
+            tokens = filter(lambda x: x, tokens)
+            tokens_list.extend(tokens)
+        
+        # content = re.sub("[',\"^(){};/<>*!@#$%.+=|-?~:]+", " ", content)
+        return tokens_list
 
 
-def check_args(args):
-    """Check if arguments are valid
-    
-    Arguments:
-        args (Namespace)
-    
-    Returns:
-        Boolean
-    """
-    if args.stopping and (args.stopwordsfile == ""):
-        print("If using stopwords add file containing stopwords")
-        return False
-    return True
+def main(args):
+    print(args)
+    obj = Parser(args)
+    obj.parse()
 
 if __name__ == "__main__":
     utils.check_dirs()
@@ -95,5 +106,4 @@ if __name__ == "__main__":
     parser.add_argument('-stopf', '--stopwordsfile', default="", type=str)
 
     args = parser.parse_args()
-    obj = Parser(args)
-    obj.parse()
+    main(args)
