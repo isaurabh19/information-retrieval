@@ -3,6 +3,7 @@ import sys
 import json
 import logging
 
+RETRIEVED_DOCS = 100
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CACM_DIR = os.path.join(BASE_DIR, 'data', 'cacm')
 INDEX_DIR = os.path.join(BASE_DIR, 'data', 'index')
@@ -37,6 +38,7 @@ def get_logger(logger_name):
 	return logger
 
 def write(logger, file_path, data):
-    logger.info("Writing: {}".format(file_path))
+    if logger:
+    	logger.info("Writing: {}".format(file_path))
     with open(file_path, 'w') as fp:
         fp.write(json.dumps(data, indent=1))
