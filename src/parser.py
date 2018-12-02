@@ -1,8 +1,8 @@
 from nltk import sent_tokenize, word_tokenize
 from bs4 import BeautifulSoup as bs
+import utils
 import os
 import re
-import utils
 import logging
 import argparse
 
@@ -24,8 +24,9 @@ class Parser(object):
         """Wrapper to parse html files to text files
         """
         self.log.info("Cleaning corpus")
-        files = os.listdir(utils.CACM_DIR)
-        files = list(map(lambda x: os.path.join(utils.CACM_DIR, x), files))
+        corpus_path = os.path.join(utils.DATA_DIR, "cacm")
+        files = os.listdir(corpus_path)
+        files = list(map(lambda x: os.path.join(corpus_path, x), files))
 
         for file in files:
             self._parse(file)

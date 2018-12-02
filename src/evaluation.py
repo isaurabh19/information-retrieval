@@ -26,7 +26,7 @@ class Evaluation(object):
 	def __init__(self, args, rel_docs):
 		self.log = utils.get_logger("Evaluation")
 		self.model = args.model
-		self.ranks_file_name = args.file
+		self.ranks_file_path = os.path.join(utils.RESULT_DIR, args.model, args.file)
 		self.rel_docs = rel_docs
 		self.queries = defaultdict(Query)
 
@@ -52,7 +52,7 @@ class Evaluation(object):
 			self.calc_precision_recall(qobj)
 
 	def create_queries(self):
-		with open(os.path.join(utils.RESULT_DIR, self.ranks_file_name), "r") as fp:
+		with open(self.ranks_file_path, "r") as fp:
 			content = json.loads(fp.read())
 			for qid, vals in content.items():
 				docs = [x[0] for x in vals]
@@ -82,10 +82,13 @@ class Evaluation(object):
 						rr_flag = False
 					pre_vals.append(p)
 
-			ap = sum(pre_vals)/len(pre_vals)
+			try:
+				ap = sum(pre_vals)/len(pre_vals)
+				self.log.debug("{}-AP={}".format(qobj.qid, ap))
+				return ap, rr
+			except ZeroDivisionError:
+				return 0, rr
 
-			self.log.debug("{}-AP={}".format(qobj.qid, ap))
-			return ap, rr
 
 		all_aps_rrs = list(map(calc_ap_rr, self.queries.values()))
 
@@ -142,11 +145,11 @@ class Evaluation(object):
 
 		return result
 
-	def gen_pr_graph(self):
+	def gen_pr_graph(self, model):
 		for _, qobj in self.queries.items():
-			self._create_graph(qobj)
+			self._create_graph(model, qobj)
 
-	def _create_graph(self, qobj):
+	def _create_graph(self, model, qobj):
 		x = qobj.recall_values
 		y = qobj.precision_values
 
@@ -155,12 +158,12 @@ class Evaluation(object):
 
 		plt.plot(x, y)
 		plt.title("PR Trend for {}".format(qobj.qid))
-		img_path = os.path.join(utils.RESULT_DIR, "plots", "eval_{}_{}.png".format(self.model, qobj.qid))
+		img_path = os.path.join(utils.RESULT_DIR, model, "plots", "eval_{}_{}.png".format(self.model, qobj.qid))
 		plt.savefig(img_path)
 		plt.clf()
 
 def load_rel_docs():
-	with open(os.path.join(utils.BASE_DIR, "data", "cacm.parsed.rel.txt"), "r") as fp:
+	with open(os.path.join(utils.DATA_DIR, "cacm.parsed.rel.txt"), "r") as fp:
 		content = json.loads(fp.read())
 		return content
 
@@ -178,9 +181,9 @@ def main(args):
 	map_val, mrr_val = obj.calc_map_mrr()
 	obj.calc_p_at_k()
 
-	file_path = os.path.join(utils.RESULT_DIR, "eval_{}.txt".format(obj.model))
+	file_path = os.path.join(utils.RESULT_DIR, args.model, "plots", "eval_{}.txt".format(obj.model))
 	utils.write(obj.log, file_path, obj.get_stats(map_val, mrr_val))
-	obj.gen_pr_graph()
+	obj.gen_pr_graph(args.model)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser("Argument Parser for Evaluation")

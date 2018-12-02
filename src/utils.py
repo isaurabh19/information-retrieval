@@ -3,19 +3,23 @@ import sys
 import json
 import logging
 
+# value of N for TF-IDF
+N = 3204
+
+# value of B for JM-Smoothing
 RETRIEVED_DOCS = 100
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-CACM_DIR = os.path.join(BASE_DIR, 'data', 'cacm')
-INDEX_DIR = os.path.join(BASE_DIR, 'data', 'index')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
 RESULT_DIR = os.path.join(BASE_DIR, 'results')
 
-CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'corpus')
-STEM_CORPUS_DIR = os.path.join(BASE_DIR, 'data', 'stem_corpus')
+INDEX_DIR = os.path.join(DATA_DIR, 'index')
+CORPUS_DIR = os.path.join(DATA_DIR, 'corpus')
+STEM_CORPUS_DIR = os.path.join(DATA_DIR, 'stem_corpus')
 
-GEN_QUERIES = os.path.join(BASE_DIR, "data", "cacm.query.txt")
-STEM_QUERIES = os.path.join(BASE_DIR, "data", "cacm_stem.query.txt")
-
-PARSED_QUERIES = os.path.join(BASE_DIR, "data", "cacm.parsed.query.txt")
+STEM_QUERIES = os.path.join(DATA_DIR, "cacm_stem.query.txt")
+PARSED_QUERIES = os.path.join(DATA_DIR, "cacm.parsed.query.txt")
 
 def check_dirs():
 	if not os.path.exists(CACM_DIR):
@@ -42,3 +46,16 @@ def write(logger, file_path, data):
     	logger.info("Writing: {}".format(file_path))
     with open(file_path, 'w') as fp:
         fp.write(json.dumps(data, indent=1))
+
+def load_queries(queries_path):
+    with open(queries_path, 'r') as fp:
+        return fp.read().split('\n')
+
+def load_inverted_index(index_path):
+	with open(index_path) as fp:
+		return json.loads(fp.read())
+
+def load_corpus_stats():
+	doc_path = os.path.join(INDEX_DIR, "stem_False_stop_False_corpus_stats.txt")
+	with open(doc_path, "r") as fp:
+		return json.loads(fp.read())

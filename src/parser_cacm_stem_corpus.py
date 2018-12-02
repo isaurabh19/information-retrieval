@@ -1,6 +1,5 @@
-import os
-# import re
 import utils
+import os
 
 def parse_stem_corpus():
     # reg = re.compile("#\s+[0-9]+(?s)(.*)#")
