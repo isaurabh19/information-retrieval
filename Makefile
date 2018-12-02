@@ -7,6 +7,8 @@ parse:
 
 index:
 	python src/indexer.py
+	python src/indexer.py -stop
+	python src/indexer.py -stem
 
 jm:
 	python src/jm-smoothing.py -ifile stem_False_stop_False_inverted_index.txt -cfile stem_False_stop_False_corpus_stats.txt

@@ -147,11 +147,12 @@ class Evaluation(object):
 			self._create_graph(qobj)
 
 	def _create_graph(self, qobj):
-		y = qobj.recall_values
-		x = qobj.precision_values
+		x = qobj.recall_values
+		y = qobj.precision_values
 
-		plt.xlabel("Precision")
-		plt.ylabel("Recall")
+		plt.xlabel("Recall")
+		plt.ylabel("Precision")
+
 		plt.plot(x, y)
 		plt.title("PR Trend for {}".format(qobj.qid))
 		img_path = os.path.join(utils.RESULT_DIR, "plots", "eval_{}_{}.png".format(self.model, qobj.qid))
@@ -177,16 +178,16 @@ def main(args):
 	map_val, mrr_val = obj.calc_map_mrr()
 	obj.calc_p_at_k()
 
-	# file_path = os.path.join(utils.RESULT_DIR, "eval_{}.txt".format(obj.model))
-	# utils.write(obj.log, file_path, obj.get_stats(map_val, mrr_val))
+	file_path = os.path.join(utils.RESULT_DIR, "eval_{}.txt".format(obj.model))
+	utils.write(obj.log, file_path, obj.get_stats(map_val, mrr_val))
 	obj.gen_pr_graph()
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser("Argument Parser for Evaluation")
 
 	parser.add_argument("-d", "--debug", action="store_true")
-	parser.add_argument("-m", "--model", default="jm", type=str)
-	parser.add_argument("-f", "--file", default="stem_False_stop_False_jm_score.txt", type=str)
+	parser.add_argument("-m", "--model", default="", type=str)
+	parser.add_argument("-f", "--file", default="", type=str)
 
 	args = parser.parse_args()
 	main(args)
