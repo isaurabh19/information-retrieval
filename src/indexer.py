@@ -1,7 +1,7 @@
 from collections import defaultdict
+import utils
 import os
 import json
-import utils
 import logging
 import argparse
 
@@ -58,9 +58,8 @@ class Indexer(object):
 		term_freq = list(map(lambda x: content.count(x), vocab))
 
 		for word, freq in zip(vocab, term_freq):
-			if self.isstopped:
-				if word in self.stopped_words:
-					continue
+			if self.isstopped and word in self.stopped_words:
+				continue
 			self.inverted_index[word].append((docid, freq))
 
 	def create_positional_index(self):
@@ -74,7 +73,6 @@ class Indexer(object):
 			self._create_positional_index(docid, vocab, words)
 
 	def _create_positional_index(self, docid, vocab, words):
-		# word_indexes = range(len(words))
 		for w in vocab:
 			j = 0
 			pos_index = []

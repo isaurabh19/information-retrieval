@@ -1,47 +1,35 @@
 from collections import defaultdict
-from threading import Thread
-from math import log
-import re
-import os
 import utils
 import logging
-import json
 import argparse
+import math
+import os
+
 
 class JelinekMercer(object):
-    def __init__(self, args, queries):
+    def __init__(self, args, index, stats, queries):
         self.log = utils.get_logger("JM-Smoothing")
         self.queries = queries
-        self.inverted_index = None
-        self.corpus_stats = None
+        self.inverted_index = index
+        self.corpus_stats = stats
         self.jm_scores = defaultdict(list)
 
         if args.debug:
             self.log.setLevel(logging.DEBUG)
 
-    def read(self, file_name, corpus_file_name):
-        self.log.info("\nInverted Index: {}\nCorpus Stats: {}".format(file_name, corpus_file_name))
-        
-        with open(os.path.join(utils.INDEX_DIR, file_name)) as fp:
-            self.inverted_index = json.loads(fp.read())
-
-        self.log.debug(self.inverted_index.keys())
-
-        with open(os.path.join(utils.INDEX_DIR, corpus_file_name)) as fp:
-            self.corpus_stats = json.loads(fp.read())
-
     def computer_scores(self):
         C = self.compute_corpus_size()
         L = 0.35
 
-        queries = map(self.refine_query, self.queries)
+        # already doing it in cacm_query_parser
+        # model should not be doing that, it is a part of user interface
+        # queries = map(self.refine_query, self.queries)
         id = 0
-        for query in queries:
+        for query in self.queries:
             self._compute_scores(id, query, C, L)
             id += 1
 
         self.sort()
-
 
     def _compute_scores(self, id, query, C, L):
         self.log.info("Q{}: {}".format(id, query))
@@ -60,7 +48,7 @@ class JelinekMercer(object):
                 B = (L*(cqi/C))
 
                 try:
-                    query_doc_score += log(A+B)
+                    query_doc_score += math.log(A+B)
                 except ValueError:
                     pass
                     # self.log.warning("Zero val for query term {}".format(term))
@@ -68,13 +56,12 @@ class JelinekMercer(object):
             qid = "Q{}".format(id)
             self.jm_scores[qid].append((docid, query_doc_score))
         
-        self.log.info(max(self.jm_scores[qid], key=lambda x: x[1]))
+        self.log.info("TOP Scorer: {}".format(max(self.jm_scores[qid], key=lambda x: x[1])))
 
-
-    def refine_query(self, query):
-        query = re.sub("[,'\-\"^(){};/<>*!@#$%.+=|?~:]+", " ", query)
-        query = ' '.join([w.lower() for w in query.split()])
-        return query
+    # def refine_query(self, query):
+    #     query = re.sub("[,'\-\"^(){};/<>*!@#$%.+=|?~:]+", " ", query)
+    #     query = ' '.join([w.lower() for w in query.split()])
+    #     return query
 
     def get_term_doc_freq(self, inverted_list, term, docid):
         for x in inverted_list:
@@ -111,37 +98,34 @@ class JelinekMercer(object):
         for query, ls in self.jm_scores.items():
             self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:100]
 
-def get_queries(queries_path):
-    with open(queries_path, 'r') as fp:
-        return fp.read().split('\n')
 
 def main(args):
-
+    print(args)
     queries = None
+    index_file = "stem_{}_stop_{}_inverted_index.txt".format(args.isstemmed, args.isstopped)
+    
     if args.isstemmed:
-        queries = get_queries(utils.STEM_QUERIES)
+        queries = utils.load_queries(utils.STEM_QUERIES)
     else:
-        queries = get_queries(utils.PARSED_QUERIES)
+        queries = utils.load_queries(utils.PARSED_QUERIES)
 
-    # queries = ['What articles exist which deal with TSS (Time Sharing System), an operating system for IBM computers?']
-    obj = JelinekMercer(args, queries)
-    obj.log.debug(queries)
-    obj.read(args.invertedindex, args.corpusstats)
+    index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
+    stats = utils.load_corpus_stats()
+
+    obj = JelinekMercer(args, index, stats, queries)
     obj.computer_scores()
 
     file_name = "stem_{}_stop_{}_jm_score.txt".format(args.isstemmed, args.isstopped)
-    file_path = os.path.join(utils.RESULT_DIR, file_name)
+    file_path = os.path.join(utils.RESULT_DIR, "jm", file_name)
     utils.write(obj.log, file_path, obj.jm_scores)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parser for JM Smoothing")
     
     parser.add_argument("-d", "--debug", action="store_true")
-    parser.add_argument("-ifile", "--invertedindex", type=str)
-    parser.add_argument("-cfile", "--corpusstats", type=str)
     parser.add_argument("-stem", "--isstemmed", action="store_true")
     parser.add_argument("-stop", "--isstopped", action="store_true")
 
     args = parser.parse_args()
-    print(args)
     main(args)

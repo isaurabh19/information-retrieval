@@ -113,16 +113,17 @@ public class lucene {
 		for (int i = 0; i < hits.length; ++i) {
 		    int docId = hits[i].doc;
 		    Document d = searcher.doc(docId);
-		    // System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
-		    printWriter.print((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
-
+		    // System.out.println(d.get("path") + " score=" + hits[i].score);
+		    printWriter.println(d.get("path") + " score=" + hits[i].score);
 		}
+		printWriter.close();
+		fileWriter.close();
 		// 5. term stats --> watch out for which "version" of the term
 		// must be checked here instead!
 		Term termInstance = new Term("contents", s);
 		long termFreq = reader.totalTermFreq(termInstance);
 		long docCount = reader.docFreq(termInstance);
-		System.out.println(s + " Term Frequency " + termFreq + " - Document Frequency " + docCount);
+		// System.out.println(s + " Term Frequency " + termFreq + " - Document Frequency " + docCount);
 		count = count + 1;
 
 	    } catch (Exception e) {

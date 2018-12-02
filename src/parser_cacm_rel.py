@@ -1,7 +1,7 @@
 from collections import defaultdict
+import utils
 import os
 import json
-import utils
 
 def parse_rel_docs():
 	result = defaultdict(list)
