@@ -1,10 +1,2 @@
 .DS_Store
 .vscode/*
-*.pyc*
-data/cacm/*
-data/corpus/*
-data/stem_corpus/*
-__pycache__/*
-*.ipynb*
-*.pdf
-*.class
