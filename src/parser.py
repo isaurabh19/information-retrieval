@@ -49,6 +49,8 @@ class Parser(object):
 				if args.casefolding:
 					content = content.lower()
 
+				pm_index = content.index("pm")
+				content = content[:pm_index+1]
 				content = self.clean(content)
 
 				# concat all terms with a single space character
