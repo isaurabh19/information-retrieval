@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from collections import defaultdict
 from matplotlib import pyplot as plt
 import argparse
@@ -75,17 +76,17 @@ class Evaluation(object):
 			rr = 0
 			rr_flag = True
 			pre_vals = []
-			for docid, p in zip(retrieved_docs, precision_values):
-				if docid in rel_docs:
-					if rr_flag:
-						rr = float(1/p)
-						rr_flag = False
-					pre_vals.append(p)
-
 			try:
-				ap = sum(pre_vals)/len(pre_vals)
-				self.log.debug("{}-AP={}".format(qobj.qid, ap))
-				return ap, rr
+				for docid, p in zip(retrieved_docs, precision_values):
+					if docid in rel_docs:
+						if rr_flag:
+							rr = float(1/p)
+							rr_flag = False
+						pre_vals.append(p)
+
+					ap = sum(pre_vals)/len(pre_vals)
+					self.log.debug("{}-AP={}".format(qobj.qid, ap))
+					return ap, rr
 			except ZeroDivisionError:
 				return 0, rr
 

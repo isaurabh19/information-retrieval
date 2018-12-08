@@ -34,6 +34,8 @@ lucene:
 	# /Users/samkeet/Downloads/IR-Project/data/model/stem
 	# /Users/samkeet/Downloads/IR-Project/data/stem_corpus
 
+eval: eval/lucene eval/jm eval/tfidf eval/bm25
+
 eval/lucene:
 	python src/evaluation.py -m lucene -f stem_False_stop_False_lucene_score.txt
 	

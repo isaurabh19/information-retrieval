@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import csv
@@ -45,7 +46,7 @@ def write(logger, file_path, data, csvf=False):
 	if logger:
 		logger.info("Writing: {}".format(file_path))
 	with open(file_path, 'w') as fp:
-		if csv:
+		if csvf:
 			writer = csv.writer(fp)
 			writer.writerow(["QueryID", "DocID", "Score"])
 			for qid, val in data.items():
