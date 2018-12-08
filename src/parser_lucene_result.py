@@ -21,7 +21,7 @@ def lucene_result_parser():
 						docid = os.path.basename(doc_path).split(".")[0]
 						result_set[qid].append((docid, float(score)))
 
-	result_path = os.path.join(utils.RESULT_DIR, "lucene", "stem_False_stop_False_lucene_score.txt")
-	utils.write(None, result_path, result_set)
+	result_path = os.path.join(utils.RESULT_DIR, "lucene", "stem_False_stop_False_lucene_score.csv")
+	utils.write(None, result_path, result_set, csvf=True)
 
 lucene_result_parser()

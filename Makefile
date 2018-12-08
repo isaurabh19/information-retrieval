@@ -24,7 +24,7 @@ bm25:
 	python src/bm25.py -stem
 	python src/bm25.py -stop
 
-bm25:
+lucene:
 	javac -cp lib/*:. src/lucene.java
 	java -cp lib/*:. src/lucene
 
