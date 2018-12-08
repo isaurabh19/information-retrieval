@@ -93,9 +93,9 @@ def main(args):
 	obj = BM25(args, index, stats, queries)
 	obj.compute_score()
 
-	file_name = "stem_{}_stop_{}_bm25_score.txt".format(args.isstemmed, args.isstopped)
+	file_name = "stem_{}_stop_{}_bm25_score.csv".format(args.isstemmed, args.isstopped)
 	file_path = os.path.join(utils.RESULT_DIR, "bm25", file_name)
-	utils.write(obj.log, file_path, obj.bm25_scores)
+	utils.write(obj.log, file_path, obj.bm25_scores, csvf=True)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser("BM25 ArgumentParser")

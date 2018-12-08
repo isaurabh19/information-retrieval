@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 import json
 import logging
 
@@ -8,7 +9,6 @@ N = 3204
 
 # value of B for JM-Smoothing
 RETRIEVED_DOCS = 100
-
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
@@ -41,15 +41,22 @@ def get_logger(logger_name):
 	logger.addHandler(console_handler)
 	return logger
 
-def write(logger, file_path, data):
-    if logger:
-    	logger.info("Writing: {}".format(file_path))
-    with open(file_path, 'w') as fp:
-        fp.write(json.dumps(data, indent=1))
+def write(logger, file_path, data, csvf=False):
+	if logger:
+		logger.info("Writing: {}".format(file_path))
+	with open(file_path, 'w') as fp:
+		if csv:
+			writer = csv.writer(fp)
+			writer.writerow(["QueryID", "DocID", "Score"])
+			for qid, val in data.items():
+				for each_val in val:
+					writer.writerow([qid, each_val[0], each_val[1]])
+		else:
+			fp.write(json.dumps(data, indent=2))
 
 def load_queries(queries_path):
-    with open(queries_path, 'r') as fp:
-        return fp.read().split('\n')
+	with open(queries_path, 'r') as fp:
+		return fp.read().split('\n')
 
 def load_inverted_index(index_path):
 	with open(index_path) as fp:

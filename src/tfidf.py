@@ -61,9 +61,9 @@ def main(args):
 	obj = TFiDF(args, index, stats, queries)
 	obj.compute_score()
 
-	file_name = "stem_{}_stop_{}_tfidf_score.txt".format(args.isstemmed, args.isstopped)
+	file_name = "stem_{}_stop_{}_tfidf_score.csv".format(args.isstemmed, args.isstopped)
 	file_path = os.path.join(utils.RESULT_DIR, "tfidf", file_name)
-	utils.write(obj.log, file_path, obj.tfidf_scores)
+	utils.write(obj.log, file_path, obj.tfidf_scores, csvf=True)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser("TF-IDF ArgumentParser")

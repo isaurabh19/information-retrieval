@@ -32,13 +32,13 @@ import org.apache.lucene.util.Version;
  * on the input of the user.
  */
 public class lucene {
-    private static Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
-    // private static Analyzer sAnalyzer = new SimpleAnalyzer(Version.LUCENE_47);
+	private static Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+	// private static Analyzer sAnalyzer = new SimpleAnalyzer(Version.LUCENE_47);
 
-    private IndexWriter writer;
-    private ArrayList<File> queue = new ArrayList<File>();
+	private IndexWriter writer;
+	private ArrayList<File> queue = new ArrayList<File>();
 
-    public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException {
 	System.out
 		.println("Enter the FULL path where the index will be created: (e.g. /Usr/index or c:\\temp\\index)");
 
@@ -48,33 +48,33 @@ public class lucene {
 
 	lucene indexer = null;
 	try {
-	    indexLocation = s;
-	    indexer = new lucene(s);
+		indexLocation = s;
+		indexer = new lucene(s);
 	} catch (Exception ex) {
-	    System.out.println("Cannot create index..." + ex.getMessage());
-	    System.exit(-1);
+		System.out.println("Cannot create index..." + ex.getMessage());
+		System.exit(-1);
 	}
 
 	// ===================================================
 	// read input from user until he enters q for quit
 	// ===================================================
 	while (!s.equalsIgnoreCase("q")) {
-	    try {
+		try {
 		System.out
 			.println("Enter the FULL path to add into the index (q=quit): (e.g. /home/mydir/docs or c:\\Users\\mydir\\docs)");
 		System.out
 			.println("[Acceptable file types: .xml, .html, .html, .txt]");
 		s = br.readLine();
 		if (s.equalsIgnoreCase("q")) {
-		    break;
+			break;
 		}
 
 		// try to add file into the index
 		indexer.indexFileOrDirectory(s);
-	    } catch (Exception e) {
+		} catch (Exception e) {
 		System.out.println("Error indexing " + s + " : "
 			+ e.getMessage());
-	    }
+		}
 	}
 
 	// ===================================================
@@ -92,16 +92,16 @@ public class lucene {
 	s = "";
 	int count = 0;
 	while (!s.equalsIgnoreCase("q")) {
-	    try {
+		try {
 		System.out.println("Enter the search query (q=quit):");
 		s = br.readLine();
 		if (s.equalsIgnoreCase("q")) {
-		    break;
+			break;
 		}
 
-	    String fileName = "Q" + Integer.toString(count) + ".txt";
-	    FileWriter fileWriter = new FileWriter(fileName);
-    	PrintWriter printWriter = new PrintWriter(fileWriter);
+		String fileName = "Q" + Integer.toString(count) + ".txt";
+		FileWriter fileWriter = new FileWriter(fileName);
+		PrintWriter printWriter = new PrintWriter(fileWriter);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
 
 		Query q = new QueryParser(Version.LUCENE_47, "contents", analyzer).parse(s);
@@ -111,10 +111,10 @@ public class lucene {
 		// 4. display results
 		System.out.println("Found " + hits.length + " hits.");
 		for (int i = 0; i < hits.length; ++i) {
-		    int docId = hits[i].doc;
-		    Document d = searcher.doc(docId);
-		    // System.out.println(d.get("path") + " score=" + hits[i].score);
-		    printWriter.println(d.get("path") + " score=" + hits[i].score);
+			int docId = hits[i].doc;
+			Document d = searcher.doc(docId);
+			// System.out.println(d.get("path") + " score=" + hits[i].score);
+			printWriter.println(d.get("path") + " score=" + hits[i].score);
 		}
 		printWriter.close();
 		fileWriter.close();
@@ -126,24 +126,24 @@ public class lucene {
 		// System.out.println(s + " Term Frequency " + termFreq + " - Document Frequency " + docCount);
 		count = count + 1;
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 		System.out.println("Error searching " + s + " : " + e.getMessage());
 		break;
-	    }
+		}
 
 	}
 
-    }
+	}
 
-    /**
-     * Constructor
-     * 
-     * @param indexDir
-     *            the name of the folder in which the index should be created
-     * @throws java.io.IOException
-     *             when exception creating index.
-     */
-    lucene(String indexDir) throws IOException {
+	/**
+	 * Constructor
+	 * 
+	 * @param indexDir
+	 *            the name of the folder in which the index should be created
+	 * @throws java.io.IOException
+	 *             when exception creating index.
+	 */
+	lucene(String indexDir) throws IOException {
 
 	FSDirectory dir = FSDirectory.open(new File(indexDir));
 
@@ -151,18 +151,18 @@ public class lucene {
 		analyzer);
 
 	writer = new IndexWriter(dir, config);
-    }
+	}
 
-    /**
-     * Indexes a file or directory
-     * 
-     * @param fileName
-     *            the name of a text file or a folder we wish to add to the
-     *            index
-     * @throws java.io.IOException
-     *             when exception
-     */
-    public void indexFileOrDirectory(String fileName) throws IOException {
+	/**
+	 * Indexes a file or directory
+	 * 
+	 * @param fileName
+	 *            the name of a text file or a folder we wish to add to the
+	 *            index
+	 * @throws java.io.IOException
+	 *             when exception
+	 */
+	public void indexFileOrDirectory(String fileName) throws IOException {
 	// ===================================================
 	// gets the list of files in a folder (if user has submitted
 	// the name of a folder) or gets a single file name (is user
@@ -172,8 +172,8 @@ public class lucene {
 
 	int originalNumDocs = writer.numDocs();
 	for (File f : queue) {
-	    FileReader fr = null;
-	    try {
+		FileReader fr = null;
+		try {
 		Document doc = new Document();
 
 		// ===================================================
@@ -187,11 +187,11 @@ public class lucene {
 
 		writer.addDocument(doc);
 		System.out.println("Added: " + f);
-	    } catch (Exception e) {
+		} catch (Exception e) {
 		System.out.println("Could not add: " + f);
-	    } finally {
+		} finally {
 		fr.close();
-	    }
+		}
 	}
 
 	int newNumDocs = writer.numDocs();
@@ -202,38 +202,38 @@ public class lucene {
 	System.out.println("************************");
 
 	queue.clear();
-    }
+	}
 
-    private void addFiles(File file) {
+	private void addFiles(File file) {
 
 	if (!file.exists()) {
-	    System.out.println(file + " does not exist.");
+		System.out.println(file + " does not exist.");
 	}
 	if (file.isDirectory()) {
-	    for (File f : file.listFiles()) {
+		for (File f : file.listFiles()) {
 		addFiles(f);
-	    }
+		}
 	} else {
-	    String filename = file.getName().toLowerCase();
-	    // ===================================================
-	    // Only index text files
-	    // ===================================================
-	    if (filename.endsWith(".htm") || filename.endsWith(".html")
-		    || filename.endsWith(".xml") || filename.endsWith(".txt")) {
+		String filename = file.getName().toLowerCase();
+		// ===================================================
+		// Only index text files
+		// ===================================================
+		if (filename.endsWith(".htm") || filename.endsWith(".html")
+			|| filename.endsWith(".xml") || filename.endsWith(".txt")) {
 		queue.add(file);
-	    } else {
+		} else {
 		System.out.println("Skipped " + filename);
-	    }
+		}
 	}
-    }
+	}
 
-    /**
-     * Close the index.
-     * 
-     * @throws java.io.IOException
-     *             when exception closing
-     */
-    public void closeIndex() throws IOException {
+	/**
+	 * Close the index.
+	 * 
+	 * @throws java.io.IOException
+	 *             when exception closing
+	 */
+	public void closeIndex() throws IOException {
 	writer.close();
-    }
+	}
 }
