@@ -80,13 +80,13 @@ class BM25(object):
 
 def main(args):
 	print(args)
-	queries = None
 	index_file = "stem_{}_stop_{}_inverted_index.txt".format(args.isstemmed, args.isstopped)
+	queries = utils.load_queries(utils.PARSED_QUERIES)
 
 	if args.isstemmed:
 		queries = utils.load_queries(utils.STEM_QUERIES)
-	else:
-		queries = utils.load_queries(utils.PARSED_QUERIES)
+	elif args.isstopped:
+		queries = utils.load_queries(utils.STOP_QUERIES)
 
 	index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
 	stats = utils.load_corpus_stats()
