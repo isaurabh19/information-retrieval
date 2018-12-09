@@ -28,10 +28,11 @@ class Indexer(object):
 		files = list(map(lambda x: os.path.join(self.corpus_name, x), files))
 
 		for file in files:
-			with open(file, 'r') as fp:
-				content = fp.read()
-				docid, _ = os.path.basename(file).split(".")
-				self.corpus[docid] = content.split()
+			docid, ext = os.path.basename(file).split(".")
+			if ext == "txt":
+				with open(file, 'r', encoding='utf-8') as fp:
+					content = fp.read()
+					self.corpus[docid] = content.split()
 
 	def index(self):
 		"""Wrapper to create inverted index

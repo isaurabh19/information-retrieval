@@ -1,5 +1,7 @@
 import utils
 from jmsmoothing import JelinekMercer
+from tfidf import TFiDF
+from bm25 import BM25
 import os
 import nltk
 import logging
@@ -13,11 +15,11 @@ logger = logging.getLogger(__name__)
 RELEVANT_DOC_COUNT = 15
 PCH = r"""!#$%&()*+/:;<=>?@[\]^_'"`{|}~,.-'"""
 ALPHA = 1
-BETA = 1
-GAMMA = 0.5
+BETA = 0.75
+GAMMA = 0.15
 
-list_queries = utils.load_queries(utils.PARSED_QUERIES)[:1]
-index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, "stem_False_stop_False_inverted_index.txt"))
+list_queries = utils.load_queries(utils.PARSED_QUERIES)
+inverted_index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, "stem_False_stop_False_inverted_index.txt"))
 # args = {debug: False, isstemmed: False, isstopped: False}
 
 parser = argparse.ArgumentParser(description="Parser for JM Smoothing")
@@ -28,11 +30,11 @@ parser.add_argument("-stop", "--isstopped", action="store_true")
 
 args = parser.parse_args()
 
-baseline_run = JelinekMercer(args, index,
-							 utils.load_corpus_stats(), list_queries)
+baseline_run = BM25(args, inverted_index,
+					 utils.load_corpus_stats(), list_queries)
 # dict query_id: [[doc_name,score],[],[] ....]
-baseline_run.computer_scores()
-results = baseline_run.jm_scores
+baseline_run.compute_scores()
+results = baseline_run.bm25_scores
 query_mapping = utils.load_query_map()
 
 
@@ -73,6 +75,7 @@ def get_vector(data, vocab):
 			vector[position] += 1
 		except ValueError:
 			logger.error("{} does not exist in vocabulary".format(token))
+			pass
 	return vector
 
 
@@ -105,9 +108,10 @@ def rocchio(query_vector, rel_vectors, non_rel_vectors):
 
 
 def get_query(vocab, vector):
+	# print(vector)
 	query = ""
 	for position, weight in enumerate(vector):
-		if weight > 0:
+		if weight > 0.1:
 			query = query + " " + vocab[position]
 	return query
 
@@ -115,10 +119,16 @@ def get_query(vocab, vector):
 modified_queries = []
 for query_id, docs in results.items():
 	# relevant_docs = docs[:RELEVANT_DOC_COUNT]
-	doc_names = map(lambda x: x[0], docs)
+	doc_names = list(map(lambda x: x[0], docs))
 	doc_contents = get_content(doc_names)  # return list of strings
-	vocabulary = get_vocabulary(doc_contents)
+	# vocabulary = get_vocabulary(doc_contents)
+	vocabulary = list(inverted_index.keys())
 	query_string = get_query_terms(query_id)
+	query_tokens = query_string.split()
+	# import pdb; pdb.set_trace()
+	temp = set(vocabulary).union(set(query_tokens))
+	vocabulary = [i for i in temp]
+	# print(query_string)
 	# query_tokens = get_query_tokens(query_terms)
 	query_vector = get_vector(query_string, vocabulary)
 	df = pd.DataFrame(doc_contents, columns=['document'])
@@ -129,6 +139,16 @@ for query_id, docs in results.items():
 	modified_query_vector = rocchio(query_vector, rel_doc_vectors, non_rel_doc_vectors)
 	modified_query = get_query(vocabulary, modified_query_vector)
 	modified_queries.append(modified_query)
-	print("DONE")
 
-logger.info(modified_queries)
+logger.info("Second Run Starting...")
+
+
+obj = BM25(args, inverted_index, utils.load_corpus_stats(), modified_queries)
+obj.compute_scores()
+
+result_path = os.path.join(utils.RESULT_DIR, "query_enrichment_bm25.json")
+utils.write(None, result_path, obj.bm25_scores)
+result_path2 = os.path.join(utils.RESULT_DIR, "query_enrichment_bm25.csv")
+utils.write(None, result_path2, obj.bm25_scores, csvf=True)
+
+

@@ -23,6 +23,8 @@ def lucene_result_parser():
 						result_set[qid].append((docid, float(score)))
 
 	result_path = os.path.join(utils.RESULT_DIR, "lucene", "stem_False_stop_False_lucene_score.csv")
+	result_path2 = os.path.join(utils.RESULT_DIR, "lucene", "stem_False_stop_False_lucene_score.json")
 	utils.write(None, result_path, result_set, csvf=True)
+	utils.write(None, result_path2, result_set)
 
 lucene_result_parser()

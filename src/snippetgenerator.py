@@ -29,7 +29,7 @@ class SnippetGenerator(object):
 	def generate_snippets(self):
 		for qid, scores in self.scores.items():
 			self.snippets[qid] = self._generate_snippets(qid, scores)
-			break
+			# break
 
 	def _generate_snippets(self, qid, scores):
 		self.log.info(qid)
@@ -44,7 +44,7 @@ class SnippetGenerator(object):
 			self.log.info("{}==>{}==>{}".format(docid, sentence, score))
 			doc_snippets.append((docid, sentence))
 
-			break
+			# break
 		return doc_snippets
 
 	def highlight(self, sentence, query):
@@ -150,7 +150,7 @@ def main(args):
 	index_file = "stem_False_stop_False_inverted_index.txt"
 	index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
 
-	results_path = os.path.join(utils.RESULT_DIR, args.model, args.file)
+	results_path = os.path.join(utils.RESULT_DIR, args.file)
 	with open(results_path, 'r') as fp:
 		scores = json.loads(fp.read())
 
