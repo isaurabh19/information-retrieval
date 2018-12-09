@@ -89,6 +89,7 @@ class JelinekMercer(object):
 		iidx = defaultdict(list)
 		for word in terms:
 			try:
+				# import pdb; pdb.set_trace()
 				iidx[word] = self.inverted_index[word]
 			except KeyError:
 				pass

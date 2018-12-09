@@ -10,9 +10,9 @@ index:
 	python src/indexer.py -stem
 
 jm:
-	python src/jm-smoothing.py
-	python src/jm-smoothing.py -stem
-	python src/jm-smoothing.py -stop
+	python src/jmsmoothing.py
+	python src/jmsmoothing.py -stem
+	python src/jmsmoothing.py -stop
 
 tfidf:
 	python src/tfidf.py

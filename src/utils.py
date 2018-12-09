@@ -67,3 +67,8 @@ def load_corpus_stats():
 	doc_path = os.path.join(INDEX_DIR, "stem_False_stop_False_corpus_stats.txt")
 	with open(doc_path, "r") as fp:
 		return json.loads(fp.read())
+
+def load_query_map():
+	doc_path = os.path.join(DATA_DIR, "query.parsed.map.txt")
+	with open(doc_path, "r") as fp:
+		return json.loads(fp.read())

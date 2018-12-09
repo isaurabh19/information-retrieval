@@ -154,16 +154,12 @@ def main(args):
 	with open(results_path, 'r') as fp:
 		scores = json.loads(fp.read())
 
-	query_map_path = os.path.join(utils.DATA_DIR, "query.parsed.map.txt")
-
-	with open(query_map_path, 'r') as fp:
-		queries = json.loads(fp.read())
-
+	queries = utils.load_query_map()
 	obj = SnippetGenerator(args, scores, queries, index)
 	obj.generate_snippets()
 
-	# file_path = os.path.join(utils.RESULT_DIR, "snippet_generation.csv")
-	# utils.write(obj.log, file_path, obj.snippets, csvf=True)
+	file_path = os.path.join(utils.RESULT_DIR, "snippet_generation.csv")
+	utils.write(obj.log, file_path, obj.snippets, csvf=True)
 
 
 if __name__ == '__main__':
