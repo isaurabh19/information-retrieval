@@ -61,7 +61,7 @@ class BM25(object):
 				score += self._compute_term_score(term, docid, avdl, query.count(term))
 			scores.append((docid, score))
 
-		scores = sorted(scores, key=lambda x: x[1], reverse=True)[:100]
+		scores = sorted(scores, key=lambda x: x[1], reverse=True)[:5]
 		return scores
 
 	def compute_scores(self):
@@ -93,7 +93,7 @@ def main(args):
 	index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
 	stats = utils.load_corpus_stats()
 
-	obj = BM25(args, index, stats, queries)
+	obj = BM25(args, index, stats, queries[49:54])
 	obj.compute_scores()
 
 	file_name = "stem_{}_stop_{}_bm25_score.csv".format(args.isstemmed, args.isstopped)

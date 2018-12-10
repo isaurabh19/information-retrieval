@@ -12,7 +12,7 @@ class Indexer(object):
 		self.corpus_name = corpus_path
 		self.log = utils.get_logger("IndexerLog")
 		self.inverted_index = defaultdict(list)
-		self.positional_index = defaultdict(dict)
+		self.positional_index = defaultdict(list)
 		self.corpus_stats = defaultdict(dict)
 		self.corpus = defaultdict(str)
 
@@ -81,14 +81,14 @@ class Indexer(object):
 			start_index = words.index(w)
 			for i in range(start_index, len(words)):
 				if words[i] == w:
-					if j == 0:
-						pos_index.append(i)
-					else:
-						pos_index.append(i-pos_index[j-1])
-					j += 1
+					# if j == 0:
+					pos_index.append(i)
+					# else:
+					# 	pos_index.append(i-pos_index[j-1])
+					# j += 1
 
 			if len(pos_index) > 0:
-				self.positional_index[w][docid] = pos_index
+				self.positional_index[w].append((docid, pos_index))
 
 	def create_corpus_stats(self):
 		for docid, content in self.corpus.items():

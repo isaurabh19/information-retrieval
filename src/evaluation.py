@@ -225,6 +225,7 @@ def create_graph(result):
 	ax.set_xlabel("Recall")
 	ax.set_ylabel("Precision")
 	ax.set_xlim([0.0, 1.0])
+	ax.set_ylim([0.0, 1.0])
 
 	model = result[0]
 	recall = model[1][0]
@@ -249,7 +250,7 @@ def create_graph(result):
 	model = result[4]
 	recall = model[1][0]
 	precision = model[1][1]
-	ax.plot(recall, precision, alpha=0.5, color='c', label=model[0])
+	ax.plot(recall, precision, alpha=0.5, color='y', label=model[0])
 
 	model = result[5]
 	recall = model[1][0]
@@ -259,7 +260,7 @@ def create_graph(result):
 	model = result[6]
 	recall = model[1][0]
 	precision = model[1][1]
-	ax.plot(recall, precision, alpha=0.5, color='y', label=model[0])
+	ax.plot(recall, precision, alpha=0.5, color='c', label=model[0])
 
 	model = result[7]
 	recall = model[1][0]

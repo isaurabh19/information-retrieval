@@ -97,7 +97,7 @@ class JelinekMercer(object):
 
 	def sort(self):
 		for query, ls in self.jm_scores.items():
-			self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:100]
+			self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:5]
 
 
 def main(args):
@@ -112,7 +112,7 @@ def main(args):
 	index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
 	stats = utils.load_corpus_stats()
 
-	obj = JelinekMercer(args, index, stats, queries)
+	obj = JelinekMercer(args, index, stats, queries[49:54])
 	obj.compute_scores()
 
 	file_name = "stem_{}_stop_{}_jm_score.csv".format(args.isstemmed, args.isstopped)
