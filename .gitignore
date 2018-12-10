@@ -1,5 +1,3 @@
 .DS_Store
 .vscode/*
-data/cacm/*
-data/corpus/*
-data/stem_corpus/*
+src/__pycache__/*

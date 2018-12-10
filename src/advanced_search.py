@@ -27,7 +27,6 @@ def best_match(query):
 	return sorted(doc_relevance_list, key=lambda x: x[1], reverse=True)
 
 def get_relevance_count(position_lists_all_docs, comparator, n):
-	# print(position_lists_all_docs)
 	first = position_lists_all_docs[0]
 	for i in range(1, len(position_lists_all_docs)):
 		second = position_lists_all_docs[i]
