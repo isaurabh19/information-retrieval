@@ -8,6 +8,7 @@ import logging
 import argparse
 
 PCH = r"""!#$%&()*+/:;<=>?@[\]^_'"`{|}~,.-'"""
+R = re.compile("\s[a|p]m\s")
 
 class Parser(object):
 	"""Parses html documents and generates a cleaned file after
@@ -49,10 +50,13 @@ class Parser(object):
 				if args.casefolding:
 					content = content.lower()
 
-				pm_index = content.index("pm")
-				content = content[:pm_index+1]
-				content = self.clean(content)
+				try:
+					content, _ = R.split(content)
+					content = content + " pm"
+				except ValueError:
+					pass
 
+				content = self.clean(content)
 				# concat all terms with a single space character
 				content = " ".join(content)
 

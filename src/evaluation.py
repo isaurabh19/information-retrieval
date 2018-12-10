@@ -5,6 +5,7 @@ import argparse
 import logging
 import utils
 import json
+import csv
 import os
 
 
@@ -24,15 +25,12 @@ class Query(object):
 
 
 class Evaluation(object):
-	def __init__(self, args, rel_docs):
+	def __init__(self, model, file, rel_docs):
 		self.log = utils.get_logger("Evaluation")
-		self.model = args.model
-		self.ranks_file_path = os.path.join(utils.RESULT_DIR, args.model, args.file)
+		self.model = model
+		self.ranks_file_path = os.path.join(utils.RESULT_DIR, file)
 		self.rel_docs = rel_docs
 		self.queries = defaultdict(Query)
-
-		if args.debug:
-			self.log.setLevel(logging.DEBUG)
 
 	def filter_queries(self):
 		self.log.info("Filtering non relevant queries")
@@ -48,7 +46,7 @@ class Evaluation(object):
 		query_ids = set(self.rel_docs.keys())
 		for qid in query_ids:
 			qobj = self.queries[qid]
-			qobj.rel_docs = self.rel_docs[qid]
+			qobj.rel_docs = set(self.rel_docs[qid])
 			qobj.A = len(self.rel_docs[qid])
 			self.calc_precision_recall(qobj)
 
@@ -59,47 +57,49 @@ class Evaluation(object):
 				docs = [x[0] for x in vals]
 				self.queries[qid] = Query(qid, docs, len(docs))
 
+	def calc_ap_rr(self, qobj):
+		"""Calculate AP and RR values given a query object
+
+		Returns:
+			(float, float) - (AP, RR)
+		"""
+		rel_docs = qobj.rel_docs
+
+		rr = 0
+		rr_flag = True
+		pre_vals = []
+		try:
+			for i in range(len(qobj.retrieved_docs)):
+				# import pdb; pdb.set_trace()
+				docid = qobj.retrieved_docs[i]
+				prec = qobj.precision_values[i]
+				if docid in rel_docs:
+					if rr_flag:
+						rr = float(1.0/(i+1))
+						rr_flag = False
+					pre_vals.append(prec)
+			ap = sum(pre_vals)*1.0/(1.0*len(pre_vals))
+			self.log.debug("{}-AP={}".format(qobj.qid, ap))
+			return ap, rr
+		except ZeroDivisionError:
+			return 0, rr
+
 	def calc_map_mrr(self):
 		"""Calculate MAP and MRR values
 		"""
 		self.log.info("Calculate MAP and MRR")
-		def calc_ap_rr(qobj):
-			"""Calculate AP and RR values given a query object
 
-			Returns:
-				(float, float) - (AP, RR)
-			"""
-			retrieved_docs = qobj.retrieved_docs
-			precision_values = qobj.precision_values
-			rel_docs = qobj.rel_docs
-
-			rr = 0
-			rr_flag = True
-			pre_vals = []
-			try:
-				for docid, p in zip(retrieved_docs, precision_values):
-					if docid in rel_docs:
-						if rr_flag:
-							rr = float(1/p)
-							rr_flag = False
-						pre_vals.append(p)
-
-					ap = sum(pre_vals)/len(pre_vals)
-					self.log.debug("{}-AP={}".format(qobj.qid, ap))
-					return ap, rr
-			except ZeroDivisionError:
-				return 0, rr
-
-
-		all_aps_rrs = list(map(calc_ap_rr, self.queries.values()))
+		all_aps_rrs = []
+		for q in self.queries.values():
+			all_aps_rrs.append(self.calc_ap_rr(q))
 
 		mrr_val = map_val = 0
 		for val in all_aps_rrs:
 			map_val += val[0]
 			mrr_val += val[1]
 
-		map_val /= len(all_aps_rrs)
-		mrr_val /= len(all_aps_rrs)
+		map_val = float(map_val/len(all_aps_rrs))
+		mrr_val = float(mrr_val/len(all_aps_rrs))
 
 		self.log.info("MAP={}, MRR={}".format(map_val, mrr_val))
 
@@ -107,8 +107,7 @@ class Evaluation(object):
 
 	def calc_p_at_k(self):
 		self.log.info("Populating P@K, Final Precision and Recall values")
-		qids = self.queries.keys()
-		for qid, qobj in self.queries.items():
+		for qid, _ in self.queries.items():
 			self.queries[qid].p5 = self.queries[qid].precision_values[4]
 			self.queries[qid].p20 = self.queries[qid].precision_values[19]
 			# self.queries[qid].precision = self.queries[qid].precision_values[-1:][0]
@@ -118,12 +117,13 @@ class Evaluation(object):
 		"""
 		"""
 		self.log.info("Calculate all Precision/Recall for {}".format(query.qid))
-		rank = 0
+		rank = 1
 		for i in range(query.B):
 			if query.retrieved_docs[i] in query.rel_docs:
 				rank += 1
-			query.precision_values.append(rank/(i+1))
-			query.recall_values.append(rank/query.A)
+			query.precision_values.append(float(rank/(i+1)))
+			query.recall_values.append(float(rank/query.A))
+
 
 	def get_stats(self, map_val, mrr_val):
 		def get_query_stats(qobj):
@@ -131,8 +131,8 @@ class Evaluation(object):
 				"QID": qobj.qid,
 				"P@5": qobj.p5,
 				"P@20": qobj.p20,
-				"Precision": qobj.precision_values,
-				"Recall": qobj.recall_values
+				"Final_Precision": qobj.precision_values[-1:][0],
+				"Final_Recall": qobj.recall_values[-1:][0],
 			}
 
 			return packet
@@ -146,32 +146,139 @@ class Evaluation(object):
 
 		return result
 
-	def gen_pr_graph(self, model):
+	def get_pr_graph(self, model):
+		p = []
+		QUERY_COUNT = 64
+		fixed_recall_values = [float(i/20) for i in range(20)]
+
 		for _, qobj in self.queries.items():
-			self._create_graph(model, qobj)
+			p.append(self.interpolate(qobj.precision_values, qobj.recall_values, fixed_recall_values))
 
-	def _create_graph(self, model, qobj):
-		x = qobj.recall_values
-		y = qobj.precision_values
+		final_p = list(map(sum, zip(*p)))
+		final_p = list(map(lambda x: float(x/QUERY_COUNT), final_p))
+		
+		return (fixed_recall_values, final_p)
 
-		plt.xlabel("Recall")
-		plt.ylabel("Precision")
+	def create_pr_files(self):
+		path = os.path.join(utils.RESULT_DIR,  "PR_{}.csv".format(self.model))
+		with open(path, 'w') as fp:
+			writer = csv.writer(fp)
+			for qid, qobj in self.queries.items():
+				writer.writerow(["Q{}".format(qid), "Precision and Recall Values"])
+				arr1 = ["Precision"]
+				arr2 = ["Recall"]
 
-		plt.plot(x, y)
-		plt.title("PR Trend for {}".format(qobj.qid))
-		img_path = os.path.join(utils.RESULT_DIR, model, "plots", "eval_{}_{}.png".format(self.model, qobj.qid))
-		plt.savefig(img_path)
-		plt.clf()
+				arr1.extend(qobj.precision_values)
+				arr2.extend(qobj.recall_values)
+			
+				writer.writerow(arr1)
+				writer.writerow(arr2)
+
+				writer.writerow([])
+				writer.writerow([])
+				
+	def create_p_at_k_files(self):
+		path = os.path.join(utils.RESULT_DIR,  "P@K_{}.csv".format(self.model))
+		with open(path, 'w') as fp:
+			writer = csv.writer(fp)
+			writer.writerow(["QID", "P@5", "P@20"])
+			writer.writerow([])
+
+			for qid, qobj in self.queries.items():
+				arr1 = ["Q{}".format(qid), qobj.p5, qobj.p20]
+				writer.writerow(arr1)
+
+	def interpolate(self, precision, query_recall, recall):
+
+		def get_next_recall_index(temp):
+			for i in range(len(query_recall)):
+				if query_recall[i] >= temp:
+					return temp
+
+		def get_prec_at_index(idx):
+			i = idx-1
+			j = idx+1
+
+			while i >= 0 and j < len(precision):
+				if precision[i] == precision[j]:
+					i -= 1
+					j += 1
+				else:
+					return max(precision[i], precision[j])
+
+		precision_result = []
+		for fixed_recall in recall:
+			if fixed_recall in set(recall):
+				idx = recall.index(fixed_recall)
+				precision_result.append(precision[idx])
+			else:
+				idx = get_next_recall_index(fixed_recall)
+				precision_result.append(get_prec_at_index(idx))
+
+		return precision_result
+
+def create_graph(result):
+	img_path = os.path.join(utils.RESULT_DIR, "PLOT.png")
+
+	fig, ax = plt.subplots()
+	ax.set_title("Precision Recall Graph")
+	ax.set_xlabel("Recall")
+	ax.set_ylabel("Precision")
+	ax.set_xlim([0.0, 1.0])
+	ax.set_ylim([0.0, 1.0])
+
+	model = result[0]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='r', label=model[0])
+	
+	model = result[1]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='g', label=model[0])	
+
+	model = result[2]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='b', label=model[0])
+
+	model = result[3]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='r', label=model[0])
+
+	model = result[4]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='y', label=model[0])
+
+	model = result[5]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='m', label=model[0])
+
+	model = result[6]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='c', label=model[0])
+
+	model = result[7]
+	recall = model[1][0]
+	precision = model[1][1]
+	ax.plot(recall, precision, alpha=0.5, color='k', label=model[0])
+	
+	legend = ax.legend(loc='upper right', shadow=True)
+	legend.get_frame().set_facecolor('#FFFFFF')
+	fig.savefig(img_path, figsize=(12,8))
 
 def load_rel_docs():
 	with open(os.path.join(utils.DATA_DIR, "cacm.parsed.rel.txt"), "r") as fp:
 		content = json.loads(fp.read())
 		return content
 
-def main(args):
-	print(args)
+def main(model, filename):
 	rel_docs = load_rel_docs()
-	obj = Evaluation(args, rel_docs)
+	obj = Evaluation(model, filename, rel_docs)
 	obj.create_queries()
 
 	obj.log.debug("Initiated Queries = {}".format(len(obj.queries)))
@@ -182,16 +289,28 @@ def main(args):
 	map_val, mrr_val = obj.calc_map_mrr()
 	obj.calc_p_at_k()
 
-	file_path = os.path.join(utils.RESULT_DIR, args.model, "plots", "eval_{}.txt".format(obj.model))
+	file_path = os.path.join(utils.RESULT_DIR, "eval_{}.txt".format(obj.model))
 	utils.write(obj.log, file_path, obj.get_stats(map_val, mrr_val))
-	obj.gen_pr_graph(args.model)
+
+	obj.create_pr_files()
+	obj.create_p_at_k_files()
+	return obj.get_pr_graph(model)
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser("Argument Parser for Evaluation")
+	plots = {
+		"stem_False_stop_False_lucene_score.txt": "lucene",
+		"stem_False_stop_False_jm_score.json": "jm",
+		"stem_False_stop_True_jm_score.json": "jm_stop",
+		"stem_False_stop_False_tfidf_score.json": "tfidf",
+		"stem_False_stop_True_tfidf_score.json": "tfidf_stop",
+		"stem_False_stop_False_bm25_score.json": "bm25",
+		"stem_False_stop_True_bm25_score.json": "bm25_stop",
+		"query_enrichment_bm25.json": "bm25_enrich",
+	}
 
-	parser.add_argument("-d", "--debug", action="store_true")
-	parser.add_argument("-m", "--model", default="", type=str)
-	parser.add_argument("-f", "--file", default="", type=str)
+	plot_params = []
 
-	args = parser.parse_args()
-	main(args)
+	for filename, model in plots.items():
+		plot_params.append((model, main(model, filename)))
+	# print(plot_params)
+	create_graph(plot_params)

@@ -12,7 +12,7 @@ class Indexer(object):
 		self.corpus_name = corpus_path
 		self.log = utils.get_logger("IndexerLog")
 		self.inverted_index = defaultdict(list)
-		self.positional_index = defaultdict(dict)
+		self.positional_index = defaultdict(list)
 		self.corpus_stats = defaultdict(dict)
 		self.corpus = defaultdict(str)
 
@@ -28,10 +28,11 @@ class Indexer(object):
 		files = list(map(lambda x: os.path.join(self.corpus_name, x), files))
 
 		for file in files:
-			with open(file, 'r') as fp:
-				content = fp.read()
-				docid, _ = os.path.basename(file).split(".")
-				self.corpus[docid] = content.split()
+			docid, ext = os.path.basename(file).split(".")
+			if ext == "txt":
+				with open(file, 'r', encoding='utf-8') as fp:
+					content = fp.read()
+					self.corpus[docid] = content.split()
 
 	def index(self):
 		"""Wrapper to create inverted index
@@ -80,14 +81,14 @@ class Indexer(object):
 			start_index = words.index(w)
 			for i in range(start_index, len(words)):
 				if words[i] == w:
-					if j == 0:
-						pos_index.append(i)
-					else:
-						pos_index.append(i-pos_index[j-1])
-					j += 1
+					# if j == 0:
+					pos_index.append(i)
+					# else:
+					# 	pos_index.append(i-pos_index[j-1])
+					# j += 1
 
 			if len(pos_index) > 0:
-				self.positional_index[w][docid] = pos_index
+				self.positional_index[w].append((docid, pos_index))
 
 	def create_corpus_stats(self):
 		for docid, content in self.corpus.items():

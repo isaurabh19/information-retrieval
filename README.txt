@@ -1,29 +1,52 @@
-#TODO:
+Run Instructions:
 
-1. Interpolation for graphs
-2. Extra credits
-3. Remove stopwrods from query (for the stopped query version)
-4. Remove numbers from corpus
-5. Debug stem queries
-6. Update graphs to use mean P an R values
+Follwing commands are to be run from the src directory
 
+[0] Preprocessing
+This step involves pre-processing the cacm.queries.txt, cacm.rel.txt
 
-1. Index corpus
-2. Index stem corpus
-3. Index corpus with stop
+python parser_cacm_query.py
+python parser_query_map.py
+python parser_cacm_rel.py
 
-1. Run JM
-2. Run JM -stem
-3. Run JM -stop
+[1] Parsing and cleaning corpus
+python parser.py -case
 
-1. Run TFIDF
-2. Run TFIDF -stem
-3. Run TFIDF -stop
+[2] Parsing stem corpus
+python parser_cacm_stem_corpus.py
 
-1. Run BM25
-2. Run BM25 -stem
-3. Run BM25 -stop
+[3] Create 3 Inverted indexes
+python indexer.py
+python indexer.py -stop
+python indexer.py -stem
 
-1. Run lucene
+[4] JM Smoothing
+python jmsmoothing.py
+python jmsmoothing.py -stem
+python jmsmoothing.py -stop
 
-1. Run eval (JM, TFIDF, BM25, Lucene)
+[5] TF-IDF
+python tfidf.py
+python tfidf.py -stem
+python tfidf.py -stop
+
+[6] BM25
+python bm25.py
+python bm25.py -stem
+python bm25.py -stop
+
+[7] Lucene
+javac -cp lib/*:. lucene.java
+java -cp lib/*:. lucene
+
+To parse the results from the files
+python parser_lucene_result.py
+
+[8] Query Enrichment Run
+python query_enrichment.py
+
+[9] Snippet Generation
+python snippetgenerator.py -d -m bm25 -f stem_False_stop_False_bm25_score.json
+
+[10] Evaluation
+python evaluation.py

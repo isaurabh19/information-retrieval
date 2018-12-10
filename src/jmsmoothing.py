@@ -11,14 +11,16 @@ class JelinekMercer(object):
 	def __init__(self, args, index, stats, queries):
 		self.log = utils.get_logger("JM-Smoothing")
 		self.queries = queries
+		self.stopped_words = utils.read_stopped_words()
 		self.inverted_index = index
 		self.corpus_stats = stats
 		self.jm_scores = defaultdict(list)
+		self.isstopped = args.isstopped
 
 		if args.debug:
 			self.log.setLevel(logging.DEBUG)
 
-	def computer_scores(self):
+	def compute_scores(self):
 		C = self.compute_corpus_size()
 		L = 0.35
 
@@ -42,6 +44,8 @@ class JelinekMercer(object):
 			query_doc_score = 0
 
 			for term in terms:
+				if self.isstopped and term in self.stopped_words:
+					continue
 				fqid = self.get_term_doc_freq(iidx[term], term, docid)
 				cqi = self.get_term_count(iidx[term], term)
 				
@@ -58,11 +62,6 @@ class JelinekMercer(object):
 			self.jm_scores[qid].append((docid, query_doc_score))
 		
 		self.log.info("TOP Scorer: {}".format(max(self.jm_scores[qid], key=lambda x: x[1])))
-
-	# def refine_query(self, query):
-	#     query = re.sub("[,'\-\"^(){};/<>*!@#$%.+=|?~:]+", " ", query)
-	#     query = ' '.join([w.lower() for w in query.split()])
-	#     return query
 
 	def get_term_doc_freq(self, inverted_list, term, docid):
 		for x in inverted_list:
@@ -98,28 +97,31 @@ class JelinekMercer(object):
 
 	def sort(self):
 		for query, ls in self.jm_scores.items():
-			self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:100]
+			self.jm_scores[query] = sorted(ls, key=lambda a: a[1], reverse=True)[:5]
 
 
 def main(args):
 	print(args)
 	queries = None
 	index_file = "stem_{}_stop_{}_inverted_index.txt".format(args.isstemmed, args.isstopped)
+	queries = utils.load_queries(utils.PARSED_QUERIES)
 	
 	if args.isstemmed:
 		queries = utils.load_queries(utils.STEM_QUERIES)
-	else:
-		queries = utils.load_queries(utils.PARSED_QUERIES)
 
 	index = utils.load_inverted_index(os.path.join(utils.INDEX_DIR, index_file))
 	stats = utils.load_corpus_stats()
 
-	obj = JelinekMercer(args, index, stats, queries)
-	obj.computer_scores()
+	obj = JelinekMercer(args, index, stats, queries[49:54])
+	obj.compute_scores()
 
 	file_name = "stem_{}_stop_{}_jm_score.csv".format(args.isstemmed, args.isstopped)
 	file_path = os.path.join(utils.RESULT_DIR, "jm", file_name)
 	utils.write(obj.log, file_path, obj.jm_scores, csvf=True)
+	
+	file_name2 = "stem_{}_stop_{}_jm_score.json".format(args.isstemmed, args.isstopped)
+	file_path2 = os.path.join(utils.RESULT_DIR, "jm", file_name2)
+	utils.write(obj.log, file_path2, obj.jm_scores)
 
 
 if __name__ == "__main__":

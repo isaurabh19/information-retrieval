@@ -23,8 +23,6 @@ STEM_QUERIES = os.path.join(DATA_DIR, "cacm_stem.query.txt")
 PARSED_QUERIES = os.path.join(DATA_DIR, "cacm.parsed.query.txt")
 
 def check_dirs():
-	if not os.path.exists(CACM_DIR):
-			raise FileNotFoundError("RAW HTML documents not found")
 	if not os.path.exists(CORPUS_DIR):
 			print("Corpus is empty. Creating a new corpus directory")
 			os.mkdir(CORPUS_DIR)
@@ -32,8 +30,6 @@ def check_dirs():
 			os.mkdir(INDEX_DIR)
 
 def get_logger(logger_name):
-	# WARNING = '\033[93m'
-	# ENDC = '\033[0m'
 	log_format = logging.Formatter("\033[93m[%(name)s][%(levelname)s]\033[0m — %(message)s")
 	logger = logging.getLogger(logger_name)
 	console_handler = logging.StreamHandler(sys.stdout)
@@ -72,3 +68,7 @@ def load_query_map():
 	doc_path = os.path.join(DATA_DIR, "query.parsed.map.txt")
 	with open(doc_path, "r") as fp:
 		return json.loads(fp.read())
+
+def read_stopped_words():
+	with open(os.path.join(BASE_DIR, "data", "common_words"), "r") as fp:
+		return set(fp.read().split("\n"))
